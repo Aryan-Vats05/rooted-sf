@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rooted in San Francisco</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="https://unpkg.com/scrollama@3.2.0/build/scrollama.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      background: #f4f2eb;
+      color: #2c2c2c;
+    }
+
+    header {
+      padding: 52px 52px 36px;
+      border-bottom: 1px solid #e0ddd6;
+    }
+    header h1 {
+      font-size: 2.2rem;
+      font-weight: 700;
+      color: #1d3d0e;
+      line-height: 1.15;
+      max-width: 560px;
+    }
+    header .byline {
+      font-size: 0.78rem;
+      color: #999;
+      margin-top: 6px;
+    }
+    header .intro {
+      font-size: 0.9rem;
+      color: #555;
+      margin-top: 14px;
+      line-height: 1.65;
+      max-width: 480px;
+    }
+
+    #app {
+      display: flex;
+      align-items: flex-start;
+    }
+
+    #scrolly {
+      width: 38%;
+      flex-shrink: 0;
+    }
+
+    #viz-panel {
+      width: 62%;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      background: #192c0c;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .chart-view {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.55s ease;
+      pointer-events: none;
+    }
+    .chart-view.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .chart-label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #5a8a30;
+      margin-bottom: 14px;
+    }
+
+    .chapter {
+      min-height: 100vh;
+      padding: 80px 52px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      border-bottom: 1px solid #e8e4dc;
+    }
+    .chapter h2 {
+      font-size: 1.55rem;
+      font-weight: 700;
+      color: #1d3d0e;
+      line-height: 1.2;
+      margin-bottom: 16px;
+    }
+    .chapter p {
+      font-size: 0.87rem;
+      line-height: 1.7;
+      color: #555;
+      margin-bottom: 10px;
+    }
+    .big-num {
+      font-size: 3.5rem;
+      font-weight: 700;
+      color: #2b6a1a;
+      line-height: 1;
+      margin: 16px 0 6px;
+    }
+    .big-label {
+      font-size: 0.78rem;
+      color: #888;
+      margin-bottom: 10px;
+    }
+    .legend-row {
+      display: flex;
+      gap: 18px;
+      margin-top: 22px;
+      flex-wrap: wrap;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 0.78rem;
+      color: #555;
+    }
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    #tooltip {
+      position: fixed;
+      background: rgba(10, 18, 5, 0.93);
+      color: #e4edcc;
+      padding: 10px 14px;
+      border-radius: 4px;
+      font-size: 0.76rem;
+      line-height: 1.55;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.1s;
+      max-width: 240px;
+      z-index: 9999;
+      border-left: 3px solid #78a830;
+    }
+    #tooltip.show { opacity: 1; }
+
+    footer {
+      padding: 36px 52px;
+      background: #f4f2eb;
+      border-top: 1px solid #e0ddd6;
+      font-size: 0.75rem;
+      color: #bbb;
+    }
+
+    svg text { font-family: 'Helvetica Neue', Arial, sans-serif; }
+
+    #plant-panel {
+      display: none;
+      position: absolute;
+      right: 20px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(10, 20, 5, 0.93);
+      border-left: 3px solid #78a830;
+      border-radius: 4px;
+      padding: 12px 16px;
+      max-height: 55vh;
+      overflow-y: auto;
+      width: 175px;
+      color: #e4edcc;
+      font-size: 0.75rem;
+      line-height: 1.5;
+    }
+    #plant-panel-header {
+      font-weight: 700;
+      color: #a0c870;
+      margin-bottom: 8px;
+      font-size: 0.78rem;
+    }
+    #plant-list div {
+      padding: 3px 0;
+      border-bottom: 1px solid #2a4a14;
+    }
+  </style>
+</head>
+<body>
+
+<div id="tooltip"></div>
+
+<header>
+  <h1>Rooted in San Francisco</h1>
+  <p class="byline">Aryan Vats &nbsp;·&nbsp; CS 360 &nbsp;·&nbsp; University of San Francisco</p>
+  <p class="intro">The SF Plant Finder tracks every species recommended for planting across the city's gardens and green spaces. Scroll to explore what grows here, who it helps, and when it blooms.</p>
+</header>
+
+<div id="app">
+
+  <div id="scrolly">
+
+    <div class="chapter" data-chapter="0">
+      <h2>629 plants call San Francisco home.</h2>
+      <p>Each dot is one plant. They're grouped by where they actually come from — born here in SF, native to California, or brought in from somewhere else.</p>
+      <div class="big-num" id="stat-sf">—</div>
+      <p class="big-label">of those are SF Natives — the ones most built for this place.</p>
+      <div class="legend-row">
+        <div class="legend-item"><div class="legend-dot" style="background:#2b6a1a"></div>SF Native</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#78a830"></div>CA Native</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#c9601e"></div>Exotic</div>
+      </div>
+    </div>
+
+    <div class="chapter" data-chapter="1">
+      <h2>What's actually growing here?</h2>
+      <p>The tree breaks it down — where the plant is from, what type it is, and how much water it needs. Click any branch to focus on it.</p>
+      <p>SF Natives tend to need less water, which makes sense for SF's dry summers. Exotics are all over the place.</p>
+    </div>
+
+    <div class="chapter" data-chapter="2" data-highlight="Pollinator">
+      <h2>Who feeds the pollinators?</h2>
+      <p>Bees, butterflies, hummingbirds — they all depend on specific plants to survive. Most of those plants turn out to be native. Makes sense for a city that used to be all native habitat.</p>
+    </div>
+
+    <div class="chapter" data-chapter="3" data-highlight="Cover">
+      <h2>Where do birds hide?</h2>
+      <p>Dense shrubs and groundcovers give birds and small animals somewhere to shelter. A lot of these are exotics — turns out wildlife will take cover wherever it's available.</p>
+    </div>
+
+    <div class="chapter" data-chapter="4" data-highlight="Buds/greens">
+      <h2>What gets eaten early?</h2>
+      <p>Some plants produce buds and greens that birds and insects eat before anything else is available. These tend to be natives — they've co-evolved with the local wildlife over thousands of years.</p>
+    </div>
+
+    <div class="chapter" data-chapter="5" data-highlight="Fruit">
+      <h2>Who keeps animals fed year-round?</h2>
+      <p>Fruit-producing plants are critical in fall and winter when other food runs out. SF has a solid mix of natives and exotics doing this job.</p>
+    </div>
+
+    <div class="chapter" data-chapter="6" data-highlight="Nesting">
+      <h2>Where do they build?</h2>
+      <p>Nesting plants provide material and structure for birds to build in. These are mostly natives — the kind of plants birds in SF have always nested in.</p>
+    </div>
+
+    <div class="chapter" data-chapter="7" data-season="Spring">
+      <h2>When does SF bloom?</h2>
+      <p>Spring is when most of it happens. SF Natives peak early then quiet down. Exotic plants stay active longer into summer and fall.</p>
+      <p>Even in winter there's still stuff blooming — mostly natives keeping the pollinators fed.</p>
+    </div>
+
+  </div>
+
+  <div id="viz-panel">
+
+    <div class="chart-view active" id="view-0">
+      <div class="chart-label">Native vs. Exotic · All 629 Species</div>
+      <div id="dot-matrix"></div>
+    </div>
+
+    <div class="chart-view" id="view-1">
+      <div class="chart-label">Origin → Type → Water Need</div>
+      <div id="tree-chart"></div>
+      <div id="plant-panel">
+        <div id="plant-panel-header"></div>
+        <div id="plant-list"></div>
+      </div>
+    </div>
+
+    <div class="chart-view" id="view-2">
+      <div class="chart-label">Ecological Roles · Colored by Origin</div>
+      <div id="beeswarm-chart"></div>
+    </div>
+
+    <div class="chart-view" id="view-3">
+      <div class="chart-label">Bloom Counts by Season &amp; Origin</div>
+      <div id="bar-chart"></div>
+    </div>
+
+  </div>
+</div>
+
+
+<script>
+const natColor = d3.scaleOrdinal()
+  .domain(['SF Native', 'CA Native', 'Exotic', 'Other'])
+  .range(['#2b6a1a', '#78a830', '#c9601e', '#888888']);
+
+const tip = document.getElementById('tooltip');
+
+function showTip(html, cx, cy) {
+  tip.innerHTML = html;
+  tip.classList.add('show');
+  placeTip(cx, cy);
+}
+
+function placeTip(cx, cy) {
+  const w = tip.offsetWidth || 230;
+  const left = cx + 16 + w > window.innerWidth ? cx - w - 10 : cx + 16;
+  tip.style.left = left + 'px';
+  tip.style.top = (cy - 10) + 'px';
+}
+
+function hideTip() { tip.classList.remove('show'); }
+
+document.addEventListener('mousemove', function(e) {
+  if (tip.classList.contains('show')) placeTip(e.clientX, e.clientY);
+});
+
+d3.csv('data/plants.csv').then(function(raw) {
+
+  const seen = {};
+  const unique = [];
+  raw.forEach(function(d) {
+    if (!seen[d.Latin_Name]) { seen[d.Latin_Name] = true; unique.push(d); }
+  });
+
+  let bsDots = null;
+  let barSel = null;
+
+  function highlightBeeswarm(role) {
+    if (!bsDots) return;
+    bsDots.transition().duration(400)
+      .attr('opacity', function(d) {
+        return role === 'all' ? 0.82 : d.data.Habitat_Value === role ? 0.95 : 0.08;
+      });
+  }
+
+  function highlightSeason(season) {
+    if (!barSel) return;
+    barSel.transition().duration(400)
+      .attr('opacity', function(d) {
+        return d.season === season ? 0.9 : 0.15;
+      });
+  }
+
+
+  // ── Dot Matrix ──────────────────────────────────────────────────────────
+
+  const natKeys = ['SF Native', 'CA Native', 'Exotic'];
+  const groups = { 'SF Native': [], 'CA Native': [], 'Exotic': [] };
+
+  unique.forEach(function(d) {
+    if (groups[d.Climate_Appropriate_Plants]) groups[d.Climate_Appropriate_Plants].push(d);
+  });
+
+  document.getElementById('stat-sf').textContent = groups['SF Native'].length;
+
+  const dotR = 4, dotGap = 3, dotStep = dotR * 2 + dotGap, dotCols = 16;
+  const dotGW = dotCols * dotStep + 14;
+  const dotMaxRows = Math.ceil(d3.max(natKeys, k => groups[k].length) / dotCols);
+  const dotW = natKeys.length * (dotGW + 26) + 10;
+  const dotH = dotMaxRows * dotStep + 52;
+
+  const dotSvg = d3.select('#dot-matrix').append('svg').attr('width', dotW).attr('height', dotH);
+
+  natKeys.forEach(function(nat, gi) {
+    const gx = gi * (dotGW + 26) + 10;
+    const pts = groups[nat];
+
+    dotSvg.append('text')
+      .attr('x', gx + dotGW / 2).attr('y', 12)
+      .attr('text-anchor', 'middle')
+      .attr('font-size', '10px').attr('font-weight', '600')
+      .attr('fill', natColor(nat))
+      .text(nat + ' (' + pts.length + ')');
+
+    dotSvg.selectAll('.d' + gi).data(pts).enter()
+      .append('circle')
+      .attr('class', 'd' + gi)
+      .attr('cx', function(d, i) { return gx + (i % dotCols) * dotStep + dotR; })
+      .attr('cy', function(d, i) { return Math.floor(i / dotCols) * dotStep + dotR + 22; })
+      .attr('r', dotR)
+      .attr('fill', natColor(nat))
+      .attr('opacity', 0.82)
+      .attr('cursor', 'pointer')
+      .on('mouseover', function(e, d) {
+        showTip(
+          '<strong>' + d.Common_Name + '</strong><br><em>' + d.Latin_Name + '</em>' +
+          '<br>Type: ' + d.Plant_Type +
+          '<br>Bloom: ' + (d.Season || '—') +
+          '<br>Water: ' + (d.Water_Needs || '—') +
+          '<br>Role: ' + (d.Habitat_Value || '—'),
+          e.clientX, e.clientY
+        );
+      })
+      .on('mouseout', hideTip);
+  });
+
+
+  // ── Tree ────────────────────────────────────────────────────────────────
+
+  function normType(t) {
+    const s = (t || '').trim();
+    return s ? s.charAt(0).toUpperCase() + s.slice(1) : 'Unknown';
+  }
+
+  const plantLookup = {};
+  unique.forEach(function(d) {
+    const nat  = d.Climate_Appropriate_Plants;
+    const type = normType(d.Plant_Type);
+    const w    = d.Water_Needs;
+    if (w !== 'None' && w !== 'Low' && w !== 'Moderate') return;
+    if (!plantLookup[nat]) plantLookup[nat] = {};
+    if (!plantLookup[nat][type]) plantLookup[nat][type] = {};
+    if (!plantLookup[nat][type][w]) plantLookup[nat][type][w] = [];
+    plantLookup[nat][type][w].push(d.Common_Name);
+  });
+
+  const treeData = {
+    name: 'SF Plants',
+    children: natKeys.map(function(nat) {
+      const natPlants = unique.filter(d => d.Climate_Appropriate_Plants === nat);
+
+      const typeMap = {};
+      natPlants.forEach(function(d) {
+        const t = normType(d.Plant_Type);
+        if (!typeMap[t]) typeMap[t] = { None: 0, Low: 0, Moderate: 0 };
+        const w = d.Water_Needs;
+        if (w === 'None' || w === 'Low' || w === 'Moderate') typeMap[t][w]++;
+      });
+
+      const top3 = Object.entries(typeMap)
+        .map(([t, wm]) => [t, Object.values(wm).reduce((a, b) => a + b, 0), wm])
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 3);
+
+      return {
+        name: nat,
+        count: natPlants.length,
+        children: top3.map(function([type, total, wm]) {
+          return {
+            name: type,
+            count: total,
+            children: ['None', 'Low', 'Moderate']
+              .filter(w => wm[w] > 0)
+              .map(w => ({ name: w, count: wm[w] }))
+          };
+        })
+      };
+    })
+  };
+
+  const treeW = 580, treeH = 430;
+  const treeM = { top: 10, right: 110, bottom: 10, left: 90 };
+
+  const treeSvg = d3.select('#tree-chart').append('svg')
+    .attr('width', treeW).attr('height', treeH)
+    .append('g').attr('transform', 'translate(' + treeM.left + ',' + treeM.top + ')');
+
+  const root = d3.hierarchy(treeData);
+  d3.tree().size([treeH - treeM.top - treeM.bottom, treeW - treeM.left - treeM.right])(root);
+
+  treeSvg.selectAll('.tl').data(root.links()).enter()
+    .append('path').attr('class', 'tl')
+    .attr('fill', 'none').attr('stroke', '#2e4a18').attr('stroke-width', 1.2)
+    .attr('d', d3.linkHorizontal().x(d => d.y).y(d => d.x));
+
+  let activeBranch = null;
+
+  function focusBranch(node) {
+    activeBranch = node;
+    const keep = new Set();
+    let cur = node;
+    while (cur) { keep.add(cur); cur = cur.parent; }
+    node.each(function(n) { keep.add(n); });
+    treeSvg.selectAll('.tn').attr('opacity', function(nd) {
+      return keep.has(nd) ? 1 : 0.12;
+    });
+    treeSvg.selectAll('.tl').attr('opacity', function(ld) {
+      return keep.has(ld.target) ? 1 : 0.12;
+    });
+  }
+
+  function resetBranches() {
+    activeBranch = null;
+    treeSvg.selectAll('.tn').attr('opacity', 1);
+    treeSvg.selectAll('.tl').attr('opacity', 1);
+    document.getElementById('plant-panel').style.display = 'none';
+  }
+
+  const treeNode = treeSvg.selectAll('.tn').data(root.descendants()).enter()
+    .append('g').attr('class', 'tn')
+    .attr('transform', d => 'translate(' + d.y + ',' + d.x + ')')
+    .attr('cursor', d => d.depth > 0 ? 'pointer' : 'default')
+    .on('click', function(e, d) {
+      if (d.depth === 0) { resetBranches(); return; }
+      if (activeBranch === d) { resetBranches(); return; }
+      focusBranch(d);
+      if (d.depth === 3) {
+        const natName  = d.parent.parent.data.name;
+        const typeName = d.parent.data.name;
+        const plants   = (plantLookup[natName] && plantLookup[natName][typeName] && plantLookup[natName][typeName][d.data.name]) || [];
+        document.getElementById('plant-panel-header').textContent = typeName + ' · ' + d.data.name + ' water (' + plants.length + ' plants)';
+        document.getElementById('plant-list').innerHTML = plants.map(function(p) { return '<div>' + p + '</div>'; }).join('');
+        document.getElementById('plant-panel').style.display = 'block';
+      } else {
+        document.getElementById('plant-panel').style.display = 'none';
+      }
+    })
+    .on('mouseover', function(e, d) {
+      if (d.depth === 0) return;
+      if (d.depth === 3) {
+        const natName  = d.parent.parent.data.name;
+        const typeName = d.parent.data.name;
+        const plants   = (plantLookup[natName] && plantLookup[natName][typeName] && plantLookup[natName][typeName][d.data.name]) || [];
+        const sample   = plants.slice(0, 5).join(', ');
+        showTip(
+          '<strong>' + d.data.name + ' water · ' + plants.length + ' plants</strong><br>' +
+          sample + (plants.length > 5 ? '...' : ''),
+          e.clientX, e.clientY
+        );
+      } else {
+        showTip('<strong>' + d.data.name + '</strong><br>Count: ' + d.data.count, e.clientX, e.clientY);
+      }
+    })
+    .on('mouseout', hideTip);
+
+  treeNode.append('circle')
+    .attr('r', d => d.depth === 0 ? 5 : d.depth === 1 ? 4 : d.depth === 2 ? 3 : 2.5)
+    .attr('fill', function(d) {
+      if (d.depth === 0) return '#c4d98a';
+      if (d.depth === 1) return natColor(d.data.name);
+      if (d.depth === 2) return '#5a8a30';
+      return '#3a6a20';
+    })
+    .attr('stroke', '#1a2e0d').attr('stroke-width', 0.8);
+
+  treeNode.append('text')
+    .attr('dy', '0.32em')
+    .attr('x', d => d.children ? -6 : 6)
+    .attr('text-anchor', d => d.children ? 'end' : 'start')
+    .attr('font-size', d => d.depth <= 1 ? '10px' : d.depth === 2 ? '9px' : '8px')
+    .attr('fill', function(d) {
+      if (d.depth === 0) return '#c4d98a';
+      if (d.depth === 1) {
+        return d.data.name === 'SF Native' ? '#7dbb50'
+          : d.data.name === 'CA Native' ? '#a8d050' : '#e89058';
+      }
+      return d.depth === 2 ? '#9ab850' : '#6a8a40';
+    })
+    .text(function(d) {
+      if (d.depth === 0) return d.data.name;
+      if (d.depth === 3) return d.data.name + ' · ' + d.data.count;
+      return d.data.name + ' (' + d.data.count + ')';
+    });
+
+
+  // ── Beeswarm ────────────────────────────────────────────────────────────
+
+  const bsRoles = ['Pollinator', 'Cover', 'Buds/greens', 'Fruit', 'Nesting'];
+  const bsPts   = unique.filter(d => bsRoles.includes(d.Habitat_Value));
+
+  const bsM = { top: 20, right: 20, bottom: 54, left: 20 };
+  const bsW = 520 - bsM.left - bsM.right;
+  const bsH = 330 - bsM.top  - bsM.bottom;
+
+  const bsSvg = d3.select('#beeswarm-chart').append('svg')
+    .attr('width',  bsW + bsM.left + bsM.right)
+    .attr('height', bsH + bsM.top  + bsM.bottom)
+    .append('g').attr('transform', 'translate(' + bsM.left + ',' + bsM.top + ')');
+
+  const xPos = d3.scalePoint().domain(bsRoles).range([30, bsW - 30]).padding(0.5);
+
+  bsSvg.append('g')
+    .attr('transform', 'translate(0,' + bsH + ')')
+    .call(d3.axisBottom(xPos).tickSize(0))
+    .call(g => g.select('.domain').remove())
+    .selectAll('text').attr('font-size', '10px').attr('fill', '#a0c870');
+
+  const bsNodes = bsPts.map(d => ({ x: xPos(d.Habitat_Value), y: bsH / 2, data: d }));
+
+  d3.forceSimulation(bsNodes)
+    .force('x', d3.forceX(d => xPos(d.data.Habitat_Value)).strength(0.9))
+    .force('y', d3.forceY(bsH / 2).strength(0.06))
+    .force('collide', d3.forceCollide(4.5))
+    .stop().tick(300);
+
+  bsDots = bsSvg.selectAll('.bs').data(bsNodes).enter()
+    .append('circle').attr('class', 'bs')
+    .attr('cx', d => d.x)
+    .attr('cy', d => Math.max(4, Math.min(bsH - 4, d.y)))
+    .attr('r', 3.5)
+    .attr('fill', d => natColor(d.data.Climate_Appropriate_Plants))
+    .attr('opacity', 0.82)
+    .attr('cursor', 'pointer')
+    .on('mouseover', function(e, d) {
+      showTip(
+        '<strong>' + d.data.Common_Name + '</strong><br><em>' + d.data.Latin_Name + '</em>' +
+        '<br>Bloom: ' + (d.data.Season || '—') +
+        '<br>Water: ' + (d.data.Water_Needs || '—') +
+        '<br>Role: ' + d.data.Habitat_Value +
+        '<br>Origin: ' + d.data.Climate_Appropriate_Plants,
+        e.clientX, e.clientY
+      );
+    })
+    .on('mouseout', hideTip);
+
+  const bsLeg = bsSvg.append('g').attr('transform', 'translate(0,' + (bsH + 36) + ')');
+  ['SF Native', 'CA Native', 'Exotic'].forEach(function(n, i) {
+    bsLeg.append('circle').attr('cx', i * 105).attr('r', 5).attr('fill', natColor(n));
+    bsLeg.append('text').attr('x', i * 105 + 12).attr('y', 4).attr('font-size', '9px').attr('fill', '#a0c870').text(n);
+  });
+
+
+  // ── Grouped Bar Chart ───────────────────────────────────────────────────
+
+  const seasons = ['Spring', 'Summer', 'Fall', 'Winter'];
+  const nats    = ['SF Native', 'CA Native', 'Exotic'];
+
+  const counts = {};
+  seasons.forEach(s => { counts[s] = {}; nats.forEach(n => { counts[s][n] = 0; }); });
+  raw.forEach(function(d) {
+    if (seasons.includes(d.Season) && nats.includes(d.Climate_Appropriate_Plants)) {
+      counts[d.Season][d.Climate_Appropriate_Plants]++;
+    }
+  });
+
+  const barData = [];
+  seasons.forEach(s => nats.forEach(n => barData.push({ season: s, nat: n, val: counts[s][n] })));
+
+  const barM = { top: 20, right: 24, bottom: 54, left: 44 };
+  const barW = 500 - barM.left - barM.right;
+  const barH = 300 - barM.top  - barM.bottom;
+
+  const barSvg = d3.select('#bar-chart').append('svg')
+    .attr('width',  barW + barM.left + barM.right)
+    .attr('height', barH + barM.top  + barM.bottom)
+    .append('g').attr('transform', 'translate(' + barM.left + ',' + barM.top + ')');
+
+  const xS    = d3.scaleBand().domain(seasons).range([0, barW]).padding(0.22);
+  const xN    = d3.scaleBand().domain(nats).range([0, xS.bandwidth()]).padding(0.06);
+  const yMax  = d3.max(barData, d => d.val);
+  const yScale = d3.scaleLinear().domain([0, yMax]).nice().range([barH, 0]);
+
+  barSvg.append('g')
+    .attr('transform', 'translate(0,' + barH + ')')
+    .call(d3.axisBottom(xS).tickSize(0))
+    .call(g => g.select('.domain').attr('stroke', '#3a5a20'))
+    .selectAll('text').attr('font-size', '11px').attr('fill', '#c4d98a');
+
+  barSvg.append('g')
+    .call(d3.axisLeft(yScale).ticks(5).tickSize(-barW))
+    .call(g => g.select('.domain').remove())
+    .call(g => g.selectAll('.tick line').attr('stroke', '#2a4a14').attr('stroke-dasharray', '3,3'))
+    .call(g => g.selectAll('.tick text').attr('font-size', '9px').attr('fill', '#6a9a40'));
+
+  barSel = barSvg.selectAll('.bar').data(barData).enter()
+    .append('rect').attr('class', 'bar')
+    .attr('x', d => xS(d.season) + xN(d.nat))
+    .attr('y', d => yScale(d.val))
+    .attr('width', xN.bandwidth())
+    .attr('height', d => barH - yScale(d.val))
+    .attr('fill', d => natColor(d.nat))
+    .attr('opacity', 0.85)
+    .attr('cursor', 'pointer')
+    .on('mouseover', function(e, d) {
+      showTip('<strong>' + d.nat + '</strong><br>' + d.season + ': ' + d.val + ' plants', e.clientX, e.clientY);
+    })
+    .on('mouseout', hideTip);
+
+  const barLeg = barSvg.append('g').attr('transform', 'translate(0,' + (barH + 36) + ')');
+  nats.forEach(function(n, i) {
+    barLeg.append('rect').attr('x', i * 95).attr('width', 10).attr('height', 10).attr('fill', natColor(n));
+    barLeg.append('text').attr('x', i * 95 + 14).attr('y', 9).attr('font-size', '9px').attr('fill', '#c4d98a').text(n);
+  });
+
+
+  // ── Scrollama ───────────────────────────────────────────────────────────
+
+  const views = document.querySelectorAll('.chart-view');
+
+  function activateView(i) {
+    views.forEach(v => v.classList.remove('active'));
+    const t = document.getElementById('view-' + i);
+    if (t) t.classList.add('active');
+  }
+
+  scrollama()
+    .setup({ step: '.chapter', offset: 0.5 })
+    .onStepEnter(function(r) {
+      const el = r.element;
+      const ch = +el.dataset.chapter;
+
+      if (ch === 0) {
+        activateView(0);
+      } else if (ch === 1) {
+        activateView(1);
+      } else if (ch >= 2 && ch <= 6) {
+        activateView(2);
+        highlightBeeswarm(el.dataset.highlight);
+      } else if (ch === 7) {
+        activateView(3);
+        highlightSeason(el.dataset.season || 'Spring');
+      }
+    });
+
+});
+</script>
+</body>
+</html>
