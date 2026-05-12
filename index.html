@@ -372,7 +372,7 @@ document.addEventListener('mousemove', function(e) {
   if (tip.classList.contains('show')) placeTip(e.clientX, e.clientY);
 });
 
-const panelW = document.getElementById('viz-panel').offsetWidth * 0.80;
+const panelW = (window.innerWidth * 0.60) * 0.80;
 const panelH = window.innerHeight * 0.80;
 
 d3.csv('data/plants.csv').then(function(raw) {
@@ -415,7 +415,6 @@ d3.csv('data/plants.csv').then(function(raw) {
     if (groups[d.Climate_Appropriate_Plants]) groups[d.Climate_Appropriate_Plants].push(d);
   });
 
-  document.getElementById('stat-sf').textContent = groups['SF Native'].length;
   document.getElementById('stat-exotic').textContent = groups['Exotic'].length;
 
   const dotCols = 18;
