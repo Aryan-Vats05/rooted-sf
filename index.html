@@ -359,7 +359,7 @@
   <p>Data comes from the <strong>SF Plant Finder</strong> dataset, which lists plants recommended by the city for gardens and green spaces. Each row is a unique species entry with fields for common name, Latin name, plant type, water needs, bloom season, habitat value (ecological role), and climate appropriateness (the origin category used throughout this project).</p>
   <p>Duplicates were removed by Latin name, keeping the first occurrence, leaving 629 unique species. The dot matrix, beeswarm, and bar chart all use this deduplicated set. The bar chart counts bloom entries per season including duplicates from the raw file (a plant that blooms in both Spring and Summer gets counted once per season).</p>
   <p>The branched tree filters to plants with Water_Needs of None, Low, or Moderate and shows only the top 3 plant types per origin group to keep the layout readable. Plants with missing or irregular water values are excluded from the tree only.</p>
-  <p>ColorBrewer colors (green sequential + orange) were used for the origin color scale throughout. No AI was used to write the story text. Layout, CSS grid settings, D3 force simulation parameters, and scrollama configuration were done with coding assistance.</p>
+  <p>ColorBrewer colors (green sequential + orange) were used for the origin color scale throughout. Use of AI was limited to trying out different CSS stylings and layout as experiments as well as cleaning some data.</p>
   <p style="margin-top:14px; font-size:0.78rem;">Source: SF Plant Finder (sfplantfinder.org) &nbsp;·&nbsp; CS 360 Final Project &nbsp;·&nbsp; Aryan Vats &nbsp;·&nbsp; University of San Francisco</p>
 </footer>
 
