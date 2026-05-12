@@ -353,6 +353,9 @@ document.addEventListener('mousemove', function(e) {
   if (tip.classList.contains('show')) placeTip(e.clientX, e.clientY);
 });
 
+const panelW = document.getElementById('viz-panel').offsetWidth * 0.80;
+const panelH = window.innerHeight * 0.80;
+
 d3.csv('data/plants.csv').then(function(raw) {
 
   const seen = {};
@@ -395,16 +398,18 @@ d3.csv('data/plants.csv').then(function(raw) {
 
   document.getElementById('stat-sf').textContent = groups['SF Native'].length;
 
-  const dotR = 5, dotGap = 3.5, dotStep = dotR * 2 + dotGap, dotCols = 18;
-  const dotGW = dotCols * dotStep + 14;
+  const dotCols = 18;
+  const dotGW = Math.floor((panelW - 10 - natKeys.length * 30) / natKeys.length);
+  const dotStep = Math.floor(dotGW / dotCols);
+  const dotR = Math.max(3, Math.floor(dotStep / 2) - 1);
   const dotMaxRows = Math.ceil(d3.max(natKeys, k => groups[k].length) / dotCols);
-  const dotW = natKeys.length * (dotGW + 30) + 10;
-  const dotH = dotMaxRows * dotStep + 62;
+  const dotW = panelW;
+  const dotH = Math.min(panelH, dotMaxRows * dotStep + 62);
 
   const dotSvg = d3.select('#dot-matrix').append('svg').attr('width', dotW).attr('height', dotH);
 
   natKeys.forEach(function(nat, gi) {
-    const gx = gi * (dotGW + 30) + 10;
+    const gx = gi * (dotGW + 30) + 15;
     const pts = groups[nat];
 
     dotSvg.append('text')
@@ -494,7 +499,7 @@ d3.csv('data/plants.csv').then(function(raw) {
     })
   };
 
-  const treeW = 920, treeH = 680;
+  const treeW = panelW, treeH = panelH;
   const treeM = { top: 10, right: 150, bottom: 10, left: 120 };
 
   const treeSvg = d3.select('#tree-chart').append('svg')
@@ -605,8 +610,8 @@ d3.csv('data/plants.csv').then(function(raw) {
   const bsPts   = unique.filter(d => bsRoles.includes(d.Habitat_Value));
 
   const bsM = { top: 24, right: 24, bottom: 60, left: 24 };
-  const bsW = 820 - bsM.left - bsM.right;
-  const bsH = 520 - bsM.top  - bsM.bottom;
+  const bsW = panelW - bsM.left - bsM.right;
+  const bsH = panelH - bsM.top  - bsM.bottom;
 
   const bsSvg = d3.select('#beeswarm-chart').append('svg')
     .attr('width',  bsW + bsM.left + bsM.right)
@@ -677,8 +682,8 @@ d3.csv('data/plants.csv').then(function(raw) {
   seasons.forEach(s => nats.forEach(n => barData.push({ season: s, nat: n, val: counts[s][n] })));
 
   const barM = { top: 24, right: 28, bottom: 70, left: 60 };
-  const barW = 800 - barM.left - barM.right;
-  const barH = 480 - barM.top  - barM.bottom;
+  const barW = panelW - barM.left - barM.right;
+  const barH = panelH - barM.top  - barM.bottom;
 
   const barSvg = d3.select('#bar-chart').append('svg')
     .attr('width',  barW + barM.left + barM.right)
