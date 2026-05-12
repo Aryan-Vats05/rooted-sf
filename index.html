@@ -221,7 +221,7 @@
 <header>
   <h1>Rooted in San Francisco</h1>
   <p class="byline">Aryan Vats &nbsp;·&nbsp; CS 360 &nbsp;·&nbsp; University of San Francisco</p>
-  <p class="intro">SF has over 600 plants on record for city gardens and green spaces. This project digs into where they come from, what wildlife they support, and when they bloom — with a focus on what makes native plants different from the rest.</p>
+  <p class="intro">SF has over 600 plants on record and each of the plants help contribute to the ecosystem in some way. This project digs into where they come from, what wildlife they support, and when they bloom by focusing on their classification.</p>
 </header>
 
 <div id="app">
@@ -229,10 +229,12 @@
   <div id="scrolly">
 
     <div class="chapter" data-chapter="0">
-      <h2>629 plants call San Francisco home.</h2>
-      <p>Each dot below is one plant, grouped by origin — SF native, California native, or exotic (brought from somewhere else).</p>
-      <div class="big-num" id="stat-sf">—</div>
-      <p class="big-label">of those are SF Natives — plants that evolved here.</p>
+      <h2>629 plants exist in San Francisco, though not all Native</h2>
+      <p>Each dot below is one plant, grouped by origin: SF native, California native, or exotic (brought from somewhere else). 
+        You clearly see a visual difference in the number of each type of plants. The Exotic group being visibly larger tells the story of
+        ecological changes, displacement of plant species and reduced diversity.</p>
+      <div class="big-num" id="stat-exotic" style="color:#7570b3">—</div>
+      <p class="big-label">of all these plants are Exotics, that are not native to the ecosystem of either San Francisco or California. </p>
       <div class="legend-row">
         <div class="legend-item"><div class="legend-dot" style="background:#1b9e77"></div>SF Native</div>
         <div class="legend-item"><div class="legend-dot" style="background:#d95f02"></div>CA Native</div>
@@ -414,6 +416,7 @@ d3.csv('data/plants.csv').then(function(raw) {
   });
 
   document.getElementById('stat-sf').textContent = groups['SF Native'].length;
+  document.getElementById('stat-exotic').textContent = groups['Exotic'].length;
 
   const dotCols = 18;
   const dotGW = Math.floor((panelW - 10 - natKeys.length * 30) / natKeys.length);
