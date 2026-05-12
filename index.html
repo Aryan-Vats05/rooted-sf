@@ -278,10 +278,27 @@
     </div>
 
     <div class="chapter" data-chapter="7" data-season="Spring">
-      <h2>When does SF bloom?</h2>
-      <p>Spring is when most plants are active. SF Natives peak early then slow down. Exotic plants stay active longer into summer and fall.</p>
-      <p>Even in winter there's still stuff blooming — mostly natives keeping the pollinators fed.</p>
-      <p class="note">Click any season bar group to highlight that season. Hover bars to see exact counts.</p>
+      <h2>Spring: peak bloom.</h2>
+      <p>Spring is when most plants are active. SF Natives peak here — they evolved with the local climate and hit their stride early in the year.</p>
+      <p class="note">Hover any bar to see exact counts. Click a bar to keep it highlighted.</p>
+    </div>
+
+    <div class="chapter" data-chapter="8" data-season="Summer">
+      <h2>Summer slows down.</h2>
+      <p>SF summers are dry and foggy. Native bloom drops off significantly. Exotics, which often come from Mediterranean or tropical climates, hold up better.</p>
+      <p class="note">Summer bars highlighted. Notice how exotics stay more active than natives.</p>
+    </div>
+
+    <div class="chapter" data-chapter="9" data-season="Fall">
+      <h2>Fall: exotics take over.</h2>
+      <p>By fall, most SF Natives have gone quiet. Exotic plants dominate the bloom count. This is when the gap between natives and exotics is biggest.</p>
+      <p class="note">Fall bars highlighted.</p>
+    </div>
+
+    <div class="chapter" data-chapter="10" data-season="Winter">
+      <h2>Winter never goes fully quiet.</h2>
+      <p>Even in winter there's still stuff blooming — mostly natives keeping the pollinators fed through the off-season.</p>
+      <p class="note">Winter bars highlighted. All bars stay hoverable throughout.</p>
     </div>
 
   </div>
@@ -769,9 +786,9 @@ d3.csv('data/plants.csv').then(function(raw) {
       } else if (ch >= 2 && ch <= 6) {
         activateView(2);
         highlightBeeswarm(el.dataset.highlight);
-      } else if (ch === 7) {
+      } else if (ch >= 7 && ch <= 10) {
         activateView(3);
-        highlightSeason(el.dataset.season || 'Spring');
+        highlightSeason(el.dataset.season);
       }
     });
 
